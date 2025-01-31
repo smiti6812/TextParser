@@ -74,11 +74,11 @@ var filteredPersons = new List<Person>(persons.Where(p => parser.Evaluate<Person
 
 persons = new List<Person>();
 Random rnd = new Random();
-DateTime startDateTime = new DateTime(1968, 12, 3);
 for (int j = 1; j < 100; j++)
 {
     int rndNumber = rnd.Next(100);
-    startDateTime =startDateTime.AddMonths(rndNumber).AddDays(rndNumber);
+    DateTime startDateTime = new DateTime(1968, 12, 3);
+    startDateTime =startDateTime.AddYears(rndNumber).AddDays(rndNumber);
     persons.Add(new Person() { Id = j, Name = $"Name{j.ToString()}", Address = $"Address{j.ToString()}", Age = rndNumber, Date = startDateTime });
 }
 filteredPersons = new List<Person>(persons.Where(p => parser.Evaluate<Person>(p)));
