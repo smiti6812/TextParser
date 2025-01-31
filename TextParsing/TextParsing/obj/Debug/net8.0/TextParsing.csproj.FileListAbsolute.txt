@@ -1,0 +1,14 @@
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\bin\Debug\net8.0\TextParsing.exe
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\bin\Debug\net8.0\TextParsing.deps.json
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\bin\Debug\net8.0\TextParsing.runtimeconfig.json
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\bin\Debug\net8.0\TextParsing.dll
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\bin\Debug\net8.0\TextParsing.pdb
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\TextParsing.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\TextParsing.AssemblyInfoInputs.cache
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\TextParsing.AssemblyInfo.cs
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\TextParsing.csproj.CoreCompileInputs.cache
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\TextParsing.dll
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\refint\TextParsing.dll
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\TextParsing.pdb
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\TextParsing.genruntimeconfig.cache
+C:\Users\SCM6BP\source\repos\TextParsing\TextParsing\obj\Debug\net8.0\ref\TextParsing.dll
