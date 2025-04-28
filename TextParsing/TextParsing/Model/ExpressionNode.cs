@@ -9,6 +9,8 @@ namespace TextParsing.Model
     public class ExpressionNode
     {
         public ExpressionNode Parent { get; set; }
+        public bool OpenBracket { get; set; }
+        public Type ValueType { get; set; }
         public int Level { get; set; }
         public Token Token { get; set; }
         public string Text { get; set; }

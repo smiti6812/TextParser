@@ -1,15 +1,12 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
 
+using TextParsing.Interfaces;
 using TextParsing.Model;
 
-
-
-Stopwatch stopWatch = new Stopwatch();
+Stopwatch stopWatch = new();
 stopWatch.Start();
 while (true)
 {
@@ -21,28 +18,34 @@ while (true)
         break;
     }
 }
+
 string operation = "(Location == Loc) And (SensorLocation == Sensor) And (Direction.StartWith(ABC)) And (Direction.EndWith(ABC)) Or (Location.Contains(ABC)))";
+string inputAritmetic = "5+4*(2-4+2-4*3)/2";
+inputAritmetic = "5+4-3*(2-4+2*3)/2";
+inputAritmetic = "4+2*x+4+5==x+14+2";
+//inputAritmetic = "3*4*2+4";
+ITextSplitter aritmeticTextSplitter = new AritmeticTextSplitter<int>(inputAritmetic, CultureInfo.CurrentCulture);
+(ExpressionNode root, int result) res = new AritmeticParser<int>(aritmeticTextSplitter).Evaluate();
 
 //string[] operands = Regex.Split(operation, @"\s+");
 string[] operands = Regex.Split(operation, @"([A-Z]+)|(==)|(\()|(\))|(!=)", RegexOptions.IgnoreCase);
-operands = operands.Where(c => c != "" && c != " " && c != ".").ToArray();
+operands = operands.Where(c => c is not "" and not " " and not ".").ToArray();
 
 CultureInfo currCulture = CultureInfo.CurrentCulture;
 string dateStr = "2025.01.18 4:16:22";
 string[] dateStrArr = Regex.Split(dateStr, @"(-)|(:)|(\s)|(\.)");
-dateStrArr = dateStrArr.Where(c => c != " " && c != "-" && c != ":" && c != ".").ToArray();
+dateStrArr = dateStrArr.Where(c => c is not " " and not "-" and not ":" and not ".").ToArray();
 string inputStr = "((Location == Loc1) And (SensorLocation == Sensor1)) And ((Location != Loc) Or (Direction == YZ))";
 inputStr = "((Location == Loc1) And (SensorLocation == Sensor1) And (Location != Loc)) Or (Direction.StartWith(ABC))";
 inputStr = "((Location.Contains(ABC)) And (Direction.StartWith(YZ))) Or ((SensorLocation == ABC) And (Direction != Y))";
 inputStr = "((Sum >= 3) Or (Date > 01.30.2025 4:16:22) Or (Location.StartWith(Loc))) And ((Direction != Y) Or (Location.StartWith(Loc2)))";
 //inputStr = "(Location == Loc1) And ((Direction != Y) Or (Location == M))";
 //List<Token> tokens = Demo.Lex(inputStr);
-var parser = new Parser(new TextSplitter(inputStr), new CultureInfo("en-US"));
+Parser parser = new(new TextSplitter<Channel>(inputStr, new CultureInfo("en-US")));
 
-Channel ch = new Channel() { Location = "Loc", Direction = "YZ", SensorLocation = "aaa", Date = DateTime.Now, Sum = 5, DecimalSum = 3.01m };
+Channel ch = new() { Location = "Loc", Direction = "YZ", SensorLocation = "aaa", Date = DateTime.Now, Sum = 5, DecimalSum = 3.01m };
 
-
-var channels = new List<Channel>()
+List<Channel> channels = new()
  {
         new Channel() { Location = "Loc", Direction = "Y", SensorLocation = "abc", Sum = 1, Date = new DateTime(2025,1,30), DecimalSum = 2m },
         new Channel() { Location = "Loc1", Direction = "Y", SensorLocation = "ABC", Sum = 2 , Date = new DateTime(2024,12,3)},
@@ -52,9 +55,9 @@ var channels = new List<Channel>()
  };
 
 bool result = parser.Evaluate(ch);
-var channelList = new List<Channel>(channels.Where(c => parser.Evaluate<Channel>(c)));
+List<Channel> channelList = new(channels.Where(c => parser.Evaluate<Channel>(c)));
 
-var persons = new List<Person>()
+List<Person> persons = new()
  {
         new Person() { Id = 1, Name = "Name1", Address ="Address1", Age = 30, Date= new DateTime(1995, 9, 3) },
         new Person() { Id = 2, Name = "Name2", Address ="Address2", Age = 28, Date= new DateTime(1997, 3, 1) },
@@ -68,18 +71,19 @@ var persons = new List<Person>()
  };
 
 inputStr = "(((Age >= 10) And (Name.Contains(8))) Or (Name.StartWith(Full))) Or (Name.StartWith(Last))";
-parser = new Parser(new TextSplitter(inputStr), new CultureInfo("en-US"));
+parser = new Parser(new TextSplitter<Channel>(inputStr, new CultureInfo("en-US")));
 
-var filteredPersons = new List<Person>(persons.Where(p => parser.Evaluate<Person>(p)));
+List<Person> filteredPersons = new(persons.Where(p => parser.Evaluate<Person>(p)));
 
-persons = new List<Person>();
-Random rnd = new Random();
+persons = [];
+Random rnd = new();
 for (int j = 1; j < 100; j++)
 {
     int rndNumber = rnd.Next(100);
-    DateTime startDateTime = new DateTime(1968, 12, 3);
-    startDateTime =startDateTime.AddYears(rndNumber).AddDays(rndNumber);
-    persons.Add(new Person() { Id = j, Name = $"Name{j.ToString()}", Address = $"Address{j.ToString()}", Age = rndNumber, Date = startDateTime });
+    DateTime startDateTime = new(1968, 12, 3);
+    startDateTime = startDateTime.AddYears(rndNumber).AddDays(rndNumber);
+    persons.Add(new Person() { Id = j, Name = $"Name{j}", Address = $"Address{j}", Age = rndNumber, Date = startDateTime });
 }
+
 filteredPersons = new List<Person>(persons.Where(p => parser.Evaluate<Person>(p)));
 Console.WriteLine("Hello");

@@ -11,59 +11,32 @@ namespace TextParsing.Model
     public class Parser : IParser
     {
         private bool result;
-        private readonly Queue<Token> tokens;
+        protected Queue<Token> Tokens;
         private Queue<Token> brackets;
         private readonly int numberOfVariables;
         private ITextSplitter textSplitter;
         private readonly string pattern = @"(<=)|(<)|(>=)|(>)|(==)|(!=)|(StartWith)|(EndWith)|(Contains)";
         private readonly string datePattern = @"(-)|(:)|(\s)|(\.)";
         private IList<Token> processedTokens;
-        private readonly CultureInfo cultureInfo;
+        protected CultureInfo CultureInfo;
 
         public ExpressionNode Root { get; set; }
 
-        public Parser(ITextSplitter _textSplitter, CultureInfo culture)
+        public Parser(ITextSplitter _textSplitter)
         {
             textSplitter = _textSplitter;
-            cultureInfo = culture;
-            tokens = textSplitter.Tokens;
-            numberOfVariables = tokens.Where(f => f.TokenType == TokenType.Variable).Count();
+            CultureInfo = _textSplitter.CultureInfo;
+            Tokens = textSplitter.Tokens;
+            numberOfVariables = Tokens.Where(f => f.TokenType == TokenType.Variable).Count();
             processedTokens = new List<Token>();
             brackets = new Queue<Token>();
             Parse();
         }
 
-        private DateTime ReturnDateTime(string dateStr)
-        {
-            string[] dateStrArr = Regex.Split(dateStr, datePattern);
-            var dateStrList = dateStrArr.Where(c => c != " " && c != "-" && c != ":" && c != "." && c != "").ToList();
-
-            var dateIntList = new List<int>();
-            dateStrList.ForEach(d =>
-            {
-                if (d.Length == 2 && d.StartsWith("0"))
-                {
-                    dateIntList.Add(int.Parse(d.Substring(1, 1)));
-                }
-                else
-                {
-                    dateIntList.Add(int.Parse(d));
-                }
-            });
-
-            return cultureInfo.Name switch
-            {
-                "hu-HU" => new DateTime(dateIntList[0], dateIntList[1], dateIntList[2], dateIntList[3], dateIntList[4], dateIntList[5]),
-                "de-DE" => new DateTime(dateIntList[0], dateIntList[1], dateIntList[2], dateIntList[3], dateIntList[4], dateIntList[5]),
-                "en-UK" => new DateTime(dateIntList[2], dateIntList[1], dateIntList[0], dateIntList[3], dateIntList[4], dateIntList[5]),
-                "en-US" => new DateTime(dateIntList[2], dateIntList[0], dateIntList[1], dateIntList[3], dateIntList[4], dateIntList[5]),
-            };
-        }
-
-        private void Parse()
+        protected virtual void Parse()
         {
             Root = ParseExpression(null);
-            while (Root.Parent != null)
+            while (Root.Parent != null && Root.Parent.Children != null)
             {
                 Root = Root.Parent;
             }
@@ -91,9 +64,9 @@ namespace TextParsing.Model
             }
             var sb = new StringBuilder();
             bool leftHandeled = false;
-            while (tokens.Count > 0)
+            while (Tokens.Count > 0)
             {
-                var token = tokens.Dequeue();
+                var token = Tokens.Dequeue();
                 switch (token.TokenType)
                 {
                     case TokenType.LessThanEqual:
@@ -114,21 +87,22 @@ namespace TextParsing.Model
                         sb.Append(token.Text);
                         if (token.TokenType == TokenType.Constant)
                         {
-                            var node = new ExpressionNode()
-                            {
-                                Text = sb.ToString()
-                            };
-
+                            string[] cmd = Regex.Split(sb.ToString(), pattern);
+                            var node = ConstVariableTypeValueProvider.ReturnExpressionNode(token.Type.Name, cmd[2].Replace("(", "").Replace(")", ""), CultureInfo);
+                            node.Text = sb.ToString();
+                            node.ValueType = token.Type;
                             node.Token = processedTokens[processedTokens.Count - 1].Text == "(" ? new Token(TokenType.Call, processedTokens[processedTokens.Count - 2].Text) : processedTokens[processedTokens.Count - 1];
-                            node.Parent = expr;
-                            if (tokens.Peek().TokenType == TokenType.CallClosingBracket)
+
+                            if (Tokens.Count > 0 && Tokens.Peek().TokenType == TokenType.CallClosingBracket)
                             {
                                 node.Text += ")";
                             }
-
+                            node.Parent = expr;
                             if (numberOfVariables == 1)
                             {
                                 expr = node;
+                                node.Parent = null;
+                                break;
                             }
 
                             if (!leftHandeled)
@@ -179,16 +153,11 @@ namespace TextParsing.Model
                             }
                         }
 
-                        if (tokens.Count < 8 || expr.Right == null)
+                        if (Tokens.Count < 8 || expr.Right == null)
                         {
                             break;
                         }
-                        /*
-                        if (brackets.Count == 0)
-                        {
-                            _ = ParseExpression(expr);
-                        }
-                        */
+
                         break;
                 }
             }
@@ -196,194 +165,6 @@ namespace TextParsing.Model
             return expr;
         }
 
-        private Int32 ReturnInt32Value(string value) => Convert.ToInt32(value, CultureInfo.InvariantCulture);
-        private UInt32 ReturnUInt32Value(string value) => Convert.ToUInt32(value, CultureInfo.InvariantCulture);
-        private UInt64 ReturnUInt64Value(string value) => Convert.ToUInt64(value, CultureInfo.InvariantCulture);
-        private Int64 ReturnInt64Value(string value) => Convert.ToInt64(value, CultureInfo.InvariantCulture);        private decimal ReturnDecimalValue(string value) => Convert.ToDecimal(value, CultureInfo.InvariantCulture);
-        private Double ReturnDoubleValue(string value) => Convert.ToDouble(value, CultureInfo.InvariantCulture);
-        private float ReturnFloatValue(string value) => Convert.ToSingle(value, CultureInfo.InvariantCulture);
-        private bool ReturnBoolValue(string value) => Convert.ToBoolean(value, CultureInfo.InvariantCulture);
-        private char ReturnCharValue(string value) => Convert.ToChar(value, CultureInfo.InvariantCulture);
-        private byte ReturnByteValue(string value) => Convert.ToByte(value, CultureInfo.InvariantCulture);
-        private DateTime ReturnDateTimeValue(string value) => ReturnDateTime(value);
-        private bool EvaluateValueAndConstantNotEqual(object fieldValue, string constant, string propertyType)
-        {
-            switch (propertyType)
-            {
-                case "String":
-                    return fieldValue.ToString() != constant;
-                case "Int32":
-                    return Convert.ToInt32(fieldValue) != ReturnDecimalValue(constant);
-                case "Int64":
-                    return Convert.ToInt64(fieldValue) != ReturnInt64Value(constant);
-                case "UInt64":
-                    return Convert.ToUInt64(fieldValue) != ReturnUInt64Value(constant);
-                case "UInt32":
-                    return Convert.ToUInt32(fieldValue) != ReturnUInt32Value(constant);
-                case "Decimal":
-                    return Convert.ToDecimal(fieldValue) != ReturnDecimalValue(constant);
-                case "Double":
-                    return Convert.ToDouble(fieldValue) != ReturnDoubleValue(constant);
-                case "Bool":
-                    return Convert.ToBoolean(fieldValue) != ReturnBoolValue(constant);
-                case "Single":
-                    return Convert.ToSingle(fieldValue) != ReturnFloatValue(constant);
-                case "Char":
-                    return Convert.ToChar(fieldValue) != ReturnCharValue(constant);
-                case "Byte":
-                    return Convert.ToByte(fieldValue) != ReturnByteValue(constant);
-                case "DateTime":
-                    return Convert.ToDateTime(fieldValue) != ReturnDateTimeValue(constant);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            };
-        }
-        private bool EvaluateValueAndConstantEqual(object fieldValue, string constant, string propertyType)
-        {
-            switch (propertyType)
-            {
-                case "String":
-                    return fieldValue.ToString() == constant;
-                case "Int32":
-                    return Convert.ToInt32(fieldValue) == ReturnDecimalValue(constant);
-                case "Int64":
-                    return Convert.ToInt64(fieldValue) == ReturnInt64Value(constant);
-                case "UInt64":
-                    return Convert.ToUInt64(fieldValue) == ReturnUInt64Value(constant);
-                case "UInt32":
-                    return Convert.ToUInt32(fieldValue) == ReturnUInt32Value(constant);
-                case "Decimal":
-                    return Convert.ToDecimal(fieldValue) == ReturnDecimalValue(constant);
-                case "Double":
-                    return Convert.ToDouble(fieldValue) == ReturnDoubleValue(constant);
-                case "Bool":
-                    return Convert.ToBoolean(fieldValue) == ReturnBoolValue(constant);
-                case "Single":
-                    return Convert.ToSingle(fieldValue) == ReturnFloatValue(constant);
-                case "Char":
-                    return Convert.ToChar(fieldValue) == ReturnCharValue(constant);
-                case "Byte":
-                    return Convert.ToByte(fieldValue) == ReturnByteValue(constant);
-                case "DateTime":
-                    return Convert.ToDateTime(fieldValue) == ReturnDateTimeValue(constant);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            };
-        }
-        private bool EvaluateValueAndConstantGreaterThan(object fieldValue, string constant, string propertyType)
-        {
-            switch (propertyType)
-            {
-                case "Int32":
-                    return Convert.ToInt32(fieldValue) > ReturnDecimalValue(constant);
-                case "Int64":
-                    return Convert.ToInt64(fieldValue) > ReturnInt64Value(constant);
-                case "UInt64":
-                    return Convert.ToUInt64(fieldValue) > ReturnUInt64Value(constant);
-                case "UInt32":
-                    return Convert.ToUInt32(fieldValue) > ReturnUInt32Value(constant);
-                case "Decimal":
-                    return Convert.ToDecimal(fieldValue) > ReturnDecimalValue(constant);
-                case "Double":
-                    return Convert.ToDouble(fieldValue) > ReturnDoubleValue(constant);
-                case "Single":
-                    return Convert.ToSingle(fieldValue) > ReturnFloatValue(constant);
-                case "DateTime":
-                    return Convert.ToDateTime(fieldValue) > ReturnDateTimeValue(constant);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            };
-        }
-        private bool EvaluateValueAndConstantGreaterThanEqual(object fieldValue, string constant, string propertyType)
-        {
-            switch (propertyType)
-            {
-                case "Int32":
-                    return Convert.ToInt32(fieldValue) >= ReturnDecimalValue(constant);
-                case "Int64":
-                    return Convert.ToInt64(fieldValue) >= ReturnInt64Value(constant);
-                case "UInt64":
-                    return Convert.ToUInt64(fieldValue) >= ReturnUInt64Value(constant);
-                case "UInt32":
-                    return Convert.ToUInt32(fieldValue) >= ReturnUInt32Value(constant);
-                case "Decimal":
-                    return Convert.ToDecimal(fieldValue) >= ReturnDecimalValue(constant);
-                case "Double":
-                    return Convert.ToDouble(fieldValue) >= ReturnDoubleValue(constant);
-                case "Single":
-                    return Convert.ToSingle(fieldValue) >= ReturnFloatValue(constant);
-                case "DateTime":
-                    return Convert.ToDateTime(fieldValue) >= ReturnDateTimeValue(constant);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            };
-        }
-        private bool EvaluateValueAndConstantLessThan(object fieldValue, string constant, string propertyType)
-        {
-            switch (propertyType)
-            {
-                case "Int32":
-                    return Convert.ToInt32(fieldValue) < ReturnDecimalValue(constant);
-                case "Int64":
-                    return Convert.ToInt64(fieldValue) < ReturnInt64Value(constant);
-                case "UInt64":
-                    return Convert.ToUInt64(fieldValue) < ReturnUInt64Value(constant);
-                case "UInt32":
-                    return Convert.ToUInt32(fieldValue) < ReturnUInt32Value(constant);
-                case "Decimal":
-                    return Convert.ToDecimal(fieldValue) < ReturnDecimalValue(constant);
-                case "Double":
-                    return Convert.ToDouble(fieldValue) < ReturnDoubleValue(constant);
-                case "Single":
-                    return Convert.ToSingle(fieldValue) < ReturnFloatValue(constant);
-                case "DateTime":
-                    return Convert.ToDateTime(fieldValue) < ReturnDateTimeValue(constant);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            };
-        }
-
-        private bool EvaluateValueAndConstantLessThanEqual(object fieldValue, string constant, string propertyType)
-        {
-            switch (propertyType)
-            {
-                case "Int32":
-                    return Convert.ToInt32(fieldValue) <= ReturnDecimalValue(constant);
-                case "Int64":
-                    return Convert.ToInt64(fieldValue) <= ReturnInt64Value(constant);
-                case "UInt64":
-                    return Convert.ToUInt64(fieldValue) <= ReturnUInt64Value(constant);
-                case "UInt32":
-                    return Convert.ToUInt32(fieldValue) <= ReturnUInt32Value(constant);
-                case "Decimal":
-                    return Convert.ToDecimal(fieldValue) <= ReturnDecimalValue(constant);
-                case "Double":
-                    return Convert.ToDouble(fieldValue) <= ReturnDoubleValue(constant);
-                case "Single":
-                    return Convert.ToSingle(fieldValue) <= ReturnFloatValue(constant);
-                case "DateTime":
-                    return Convert.ToDateTime(fieldValue) <= ReturnDateTimeValue(constant);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            };
-        }
-
-        private bool EvaluateCall(object fieldValue, string constant, string callFunction)
-        {
-            return callFunction switch
-            {
-                "StartWith" => fieldValue.ToString().StartsWith(constant.Substring(1, constant.Length - 2)),
-                "EndWith" => fieldValue.ToString().EndsWith(constant.Substring(1, constant.Length - 2)),
-                "Contains" => fieldValue.ToString().Contains(constant.Substring(1, constant.Length - 2))
-            };
-        }
-
-        private (object value, string type) GetValue<T>(string field, T item)
-        {
-            Type t = item.GetType();
-            PropertyInfo propertyInfo = t.GetProperty(field);
-            return (propertyInfo.GetValue(item, null), propertyInfo.PropertyType.Name);
-        }
 
         public bool Evaluate<T>(T ch) => EvaluateExpression(Root, ch);
 
@@ -402,18 +183,19 @@ namespace TextParsing.Model
                 string operandus = cmd.Length == 1 && (cmd[0] == "Or" || cmd[0] == "And") ? cmd[0] : cmd[1];
                 if (operandus != "Or" && operandus != "And")
                 {
-                    (object value, string propertyType) = GetValue<T>(cmd[0].Replace(".", ""), ch);
+                    var variableValue = ConstVariableTypeValueProvider.GetPropertyValue<T>(cmd[0].Replace(".", ""), ch);
+                    var constantValue = ConstVariableTypeValueProvider.GetExpressionNodeDescendant(root).ConstantValue;
                     result = operandus switch
                     {
-                        "==" => EvaluateValueAndConstantEqual(value, cmd[2], propertyType),
-                        "!=" => EvaluateValueAndConstantNotEqual(value, cmd[2], propertyType),
-                        ">=" => EvaluateValueAndConstantGreaterThanEqual(value, cmd[2], propertyType),
-                        ">" => EvaluateValueAndConstantGreaterThan(value, cmd[2], propertyType),
-                        "<=" => EvaluateValueAndConstantLessThanEqual(value, cmd[2], propertyType),
-                        "<" => EvaluateValueAndConstantLessThan(value, cmd[2], propertyType),
-                        "StartWith" => EvaluateCall(value, cmd[2], operandus),
-                        "EndWith" => EvaluateCall(value, cmd[2], operandus),
-                        "Contains" => EvaluateCall(value, cmd[2], operandus),
+                        "==" => variableValue == constantValue,
+                        "!=" => variableValue != constantValue,
+                        ">=" => variableValue >= constantValue,
+                        ">" => variableValue > constantValue,
+                        "<=" => variableValue <= constantValue,
+                        "<" => variableValue < constantValue,
+                        "StartWith" => variableValue.StartsWith(constantValue),
+                        "EndWith" => variableValue.EndsWith(constantValue),
+                        "Contains" => variableValue.Contains(constantValue),
                         _ => throw new InvalidOperationException($"Invalid operation: {cmd[1]}")
                     };
                 }

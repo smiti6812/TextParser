@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TextParsing.Enums
+﻿namespace TextParsing.Enums
 {
     public enum OperationType
     {
@@ -19,6 +13,10 @@ namespace TextParsing.Enums
 
     public enum TokenType
     {
+        Addition,
+        Substruction,
+        Division,
+        Multiplication,
         Bool,
         String,
         Equal,
@@ -38,8 +36,8 @@ namespace TextParsing.Enums
         Expression,
         Call,
         CallOpeningBracket,
-        CallClosingBracket
-
+        CallClosingBracket,
+        NoAction
 
     }
 

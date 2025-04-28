@@ -11,13 +11,15 @@ namespace TextParsing.Model
     public class Token
     {
         public TokenType TokenType;
+        public Type Type { get; set; }
 
         public string Text { get; set; }
 
-        public Token(TokenType tokenType, string text)
+        public Token(TokenType tokenType, string text, Type type = null)
         {
             TokenType = tokenType;
             Text = text;
+            Type = type;
         }
         public override string ToString()
         {

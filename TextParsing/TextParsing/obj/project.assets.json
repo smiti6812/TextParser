@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\SCM6BP\\source\\repos\\TextParsing\\TextParsing\\TextParsing.csproj",
+      "projectUniqueName": "c:\\Users\\SCM6BP\\Documents\\GithubEnterprise\\TextParser\\TextParser\\TextParsing\\TextParsing\\TextParsing.csproj",
       "projectName": "TextParsing",
-      "projectPath": "C:\\Users\\SCM6BP\\source\\repos\\TextParsing\\TextParsing\\TextParsing.csproj",
+      "projectPath": "c:\\Users\\SCM6BP\\Documents\\GithubEnterprise\\TextParser\\TextParser\\TextParsing\\TextParsing\\TextParsing.csproj",
       "packagesPath": "C:\\Users\\SCM6BP\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\SCM6BP\\source\\repos\\TextParsing\\TextParsing\\obj\\",
+      "outputPath": "c:\\Users\\SCM6BP\\Documents\\GithubEnterprise\\TextParser\\TextParser\\TextParsing\\TextParsing\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Progress\\ToolboxNuGetPackages"
